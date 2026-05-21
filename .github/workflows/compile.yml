@@ -1,0 +1,43 @@
+name: Android NDK r25c Compiler
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Android NDK r25c
+      uses: android-actions/setup-android@v3
+      with:
+        ndk-version: '25.2.9519653'
+
+    - name: Unzip project if needed
+      run: |
+        if [ -f *.zip ]; then
+          unzip *.zip -d project_folder
+          cd project_folder
+        fi
+        
+        JNI_DIR=$(find . -type d -name "jni" | head -n 1)
+        if [ -z "$JNI_DIR" ]; then
+          echo "Xatolik: jni papkasi topilmadi!"
+          exit 1
+        fi
+        
+        cd "$JNI_DIR/.."
+        $ANDROID_NDK_ROOT/ndk-build
+
+    - name: Upload compiled .so files
+      uses: actions/upload-artifact@v4
+      with:
+        name: jni-libs-r25c
+        path: |
+          **/libs/**/*.so
+          **/obj/**/*.so
